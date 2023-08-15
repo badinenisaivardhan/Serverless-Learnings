@@ -1,0 +1,5 @@
+Resources:
+  MySQSQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: MySQSQueue  

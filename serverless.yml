@@ -1,0 +1,30 @@
+service: serverless-project
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: ap-south-1
+  stage: dev
+
+plugins:
+   - 'serverless-offline'
+
+functions:
+  - LambdaExample: 
+      name: Lambda-Example
+      handler: functions/Lambda.handler
+
+  - ApiGateWayExample: 
+      name: ApiGateWay-Example
+      handler: functions/ApiGateway.handler
+      events:
+        - httpApi:
+            method: GET
+            path: /hello
+          
+resources:
+   - ${file(resources/s3/resource.yml)} # Create S3 Bucket
+   - ${file(resources/sns/resource.yml)} # Create SNS TopicName To Publish Messages
+   - ${file(resources/sqs/resource.yml)} # Create An SQS With Queue
+   
