@@ -6,9 +6,24 @@ provider:
   runtime: nodejs14.x
   region: ap-south-1
   stage: dev
+  profile: BSV
+  iam:
+    role:
+      statements:
+          - Effect: 'Allow'
+            Action: 
+              - 's3:*'
+              - 'ses:*'
+            Resource: '*'
 
 plugins:
    - 'serverless-offline'
+   - 'serverless-s3-sync'
+
+custom:
+  s3Sync:
+    - bucketName: my-static-site-assets-s3bucket
+      localDir: htdocs
 
 functions:
   - LambdaExample: 
@@ -22,9 +37,68 @@ functions:
         - httpApi:
             method: GET
             path: /hello
+  - SendMailExample: 
+      name: SES-Example
+      handler: functions/SES.handler
+      events:
+        - httpApi:
+            method: POST
+            path: /sendmail
           
 resources:
-   - ${file(resources/s3/resource.yml)} # Create S3 Bucket
-   - ${file(resources/sns/resource.yml)} # Create SNS TopicName To Publish Messages
-   - ${file(resources/sqs/resource.yml)} # Create An SQS With Queue
-   
+  Resources:
+    MyS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: my-static-site-assets-s3bucket
+    #     AccessControl: PublicRead
+    #     PublicAccessBlockConfiguration:
+    #       BlockPublicPolicy: false
+    #       RestrictPublicBuckets: false
+    #     WebsiteConfiguration:
+    #         IndexDocument: index.html
+    #         ErrorDocument: index.html
+
+    # CloudFrontDistribution:
+    #         Type: AWS::CloudFront::Distribution
+    #         Properties:
+    #             DistributionConfig:
+    #                 Origins:
+    #                     - DomainName: my-static-site-assets-s3bucket.s3.amazonaws.com
+    #                       Id: MyS3Bucket
+    #                       CustomOriginConfig:
+    #                           HTTPPort: 80
+    #                           HTTPSPort: 443
+    #                           OriginProtocolPolicy: https-only
+    #                 Enabled: 'true'
+    #                 DefaultRootObject: index.html
+    #                 CustomErrorResponses:
+    #                     - ErrorCode: 404
+    #                       ResponseCode: 200
+    #                       ResponsePagePath: /index.html
+    #                 DefaultCacheBehavior:
+    #                     AllowedMethods:
+    #                         - DELETE
+    #                         - GET
+    #                         - HEAD
+    #                         - OPTIONS
+    #                         - PATCH
+    #                         - POST
+    #                         - PUT
+    #                     TargetOriginId: MyS3Bucket
+    #                     ForwardedValues:
+    #                         QueryString: 'false'
+    #                         Cookies:
+    #                             Forward: none
+    #                     ViewerProtocolPolicy: redirect-to-https
+    #                 ViewerCertificate:
+    #                     CloudFrontDefaultCertificate: true
+                        
+    MySNSTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: MySNSTopic
+    MySQSQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: MySQSQueue 
